@@ -1,32 +1,35 @@
 require('dotenv').config();
+const express = require("express")
 const axios = require('axios');
+const app= express();
+const PORT = 3000;
+const apiKey = process.env.API_KEY;
 
-const city = process.argv[2];
-const apiKey = process.env.API_KEY; // fixed variable name
+// static file from public folder
+app.use(express.static("public"));
 
-if (!city) {
-    console.log("❌ Please provide a city name!");
-    process.exit(1);
-}
 
-async function getWeather() {
-    try {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+// now using api to fetch weather 
+app.get("/weather",async(req,res)=>{
+   const city= req.query.city;
+   const apikey =process.env.API_KEY;
+   if(!city){
+    return res.status(400).json({error:"city is required"});
 
-        const response = await axios.get(url);
-        const data = response.data;
+   } 
+   try{
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+    const response = await axios.get(url);
+    res.json(response.data);
+   }
+   catch (error){
+    res.status(500).json({error:"city not found or api error"});
 
-        console.log(`\n🌍 Weather in ${data.name}, ${data.sys.country}:`);
-        console.log(`🌡️ Temperature: ${data.main.temp}°C`);
-        console.log(`☁️ Condition: ${data.weather[0].description}`);
-        console.log(`💧 Humidity: ${data.main.humidity}%\n`);
-    } catch (error) {
-        if (error.response) {
-            console.error("API Error:", error.response.data);
-        } else {
-            console.error("Error:", error.message);
-        }
-    }
-}
+   }
 
-getWeather();
+});
+app.listen (PORT,()=>{
+    console.log(`✅ Server running at http://localhost:${PORT}`);
+});
+
+
